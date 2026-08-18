@@ -1,29 +1,45 @@
-import java.io.*;
-import java.util.*;
-import java.util.HashMap;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 
 public class Filing {
-    public static ArrayList<String> Dictionary = new ArrayList<>();
+    public static final ArrayList<String> Dictionary = new ArrayList<>();
 
-    public void dict(){
+    private final Path filePath;
 
-        File file = new File("/home/chander/Desktop/UrduNames.txt");
-        try {
-            BufferedReader eng = new BufferedReader(new FileReader(file));
+    public Filing() {
+        this("/home/chander/Desktop/UrduNames.txt");
+    }
 
+    public Filing(String filePath) {
+        this.filePath = Paths.get(filePath);
+    }
+
+    // FIX: this must return the dictionary because Test uses file.dict() in a for-each loop.
+    public ArrayList<String> dict() {
+        Dictionary.clear();
+
+        try (BufferedReader reader = Files.newBufferedReader(
+                filePath, StandardCharsets.UTF_8)) {
 
             String poetName;
 
-            while ((poetName = eng.readLine()) != null) {
+            while ((poetName = reader.readLine()) != null) {
+                poetName = poetName.trim();
 
-                Dictionary.add(poetName);
+                if (!poetName.isEmpty()) {
+                    Dictionary.add(poetName);
+                }
             }
-        }
-        catch (Exception ex)
-        {
-            System.out.println(ex);
+
+        } catch (IOException ex) {
+            System.err.println("Could not read dictionary file: " + ex.getMessage());
         }
 
-
+        return Dictionary;
     }
 }

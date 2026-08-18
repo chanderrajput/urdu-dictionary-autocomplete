@@ -1,12 +1,21 @@
 public class Test {
-    public static void main(String[] args)throws Exception {
-        AutoCompleteDictionaryTrie trieDictionary=new AutoCompleteDictionaryTrie();
-        Filing file=new Filing();
-        file.dict();
+    public static void main(String[] args) {
+        String dictionaryPath = args.length > 0
+                ? args[0]
+                : "UrduNames.txt";
+                
 
-        for (String i : file.Dictionary){
-            trieDictionary.addWord(i);
+        AutoCompleteDictionaryTrie trieDictionary =
+                new AutoCompleteDictionaryTrie();
+
+        Filing file = new Filing(dictionaryPath);
+
+        for (String word : file.dict()) {
+            trieDictionary.addWord(word);
         }
+
+        System.out.println("Words loaded: " + trieDictionary.size());
+        System.out.println("Autocomplete results:");
 
         trieDictionary.FetchAll("آئر");
     }

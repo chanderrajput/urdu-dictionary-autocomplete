@@ -1,148 +1,153 @@
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
 
-public class AutoCompleteDictionaryTrie
-{
+public class AutoCompleteDictionaryTrie {
     private Node root;
     private int size;
-    public String searchWord="";
 
-    public AutoCompleteDictionaryTrie()
-    {
+    public AutoCompleteDictionaryTrie() {
         root = new Node();
-        size=0;
+        size = 0;
     }
 
-    public Node getRoot()
-    {
+    public Node getRoot() {
         return root;
     }
 
-    public void setRoot(Node root)
-    {
+    public void setRoot(Node root) {
+        if (root == null) {
+            throw new IllegalArgumentException("root cannot be null");
+        }
         this.root = root;
     }
 
-    public boolean addWord(String word)
-    {
-        String Word=word.toLowerCase();
-        if(isWord(word))
+    public boolean addWord(String word) {
+        if (word == null) {
             return false;
+        }
 
-        HashMap<Character, Node> children=root.children;
-        for(int i=0; i<Word.length(); i++)
-        {
-            char c = Word.charAt(i);
-            Node temp;
-            if(children.containsKey(c))
-            {
-                temp = children.get(c);
-            }
-            else
-            {
-                temp = new Node((c));
-                children.put(c, temp);
+        String normalized = word.trim().toLowerCase(Locale.ROOT);
+
+        if (normalized.isEmpty() || isWord(normalized)) {
+            return false;
+        }
+
+        HashMap<Character, Node> children = root.children;
+
+        for (int i = 0; i < normalized.length(); i++) {
+            char c = normalized.charAt(i);
+            Node current;
+
+            if (children.containsKey(c)) {
+                current = children.get(c);
+            } else {
+                current = new Node(c);
+                children.put(c, current);
             }
 
-            children = temp.children;
-            if(i==Word.length()-1)
-            {
-                temp.isWord = true;
+            if (i == normalized.length() - 1) {
+                current.setendsWord(true);
                 size++;
             }
+
+            children = current.children;
         }
+
         return true;
     }
 
-    public int size()
-    {
+    public int size() {
         return size;
     }
 
-
-    public boolean isWord(String s)
-    {
-        Node temp = searchNode(s.toLowerCase());
-
-        if (temp != null && temp.isWord)
-            return true;
-        else
+    public boolean isWord(String s) {
+        if (s == null) {
             return false;
+        }
+
+        String normalized = s.trim().toLowerCase(Locale.ROOT);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        Node node = searchNode(normalized);
+        return node != null && node.endWord();
     }
 
-    public Node searchNode(String str)
-    {
+    public Node searchNode(String str) {
+        if (str == null) {
+            return null;
+        }
+
         HashMap<Character, Node> children = root.children;
-        Node temp = null;
-        for (int i = 0; i < str.length(); i++)
-        {
+        Node current = root;
+
+        for (int i = 0; i < str.length(); i++) {
             char c = str.charAt(i);
-            if (children.containsKey(c))
-            {
-                temp = children.get(c);
-                children = temp.children;
-            } else
-            {
+
+            if (!children.containsKey(c)) {
                 return null;
             }
+
+            current = children.get(c);
+            children = current.children;
         }
-        return temp;
+
+        return current;
     }
 
-
-    public void FetchAll(String str)
-    {
-        HashMap<Character, Node> children = root.children;
-        Node temp = null;
-
-        for (int i = 0; i < str.length(); i++)
-        {
-            char c = str.charAt(i);
-            if (children.containsKey(c))
-            {
-                temp = children.get(c);
-                children = temp.children;
-                searchWord=searchWord+temp.getText();
-
-            } else
-                {
-                    System.out.println("word not found");
-                    System.exit(0);
-                }
-        }
-        getChildren(temp.children);
-        
-        for (int i=0;i<nodeWords.size();i++)
-        {
-            System.out.println(searchWord+nodeWords.get(i));
+    /**
+     * Returns every complete dictionary word beginning with prefix.
+     */
+    public List<String> fetchAll(String prefix) {
+        if (prefix == null) {
+            return Collections.emptyList();
         }
 
+        String normalized = prefix.trim().toLowerCase(Locale.ROOT);
+        Node prefixNode = searchNode(normalized);
+
+        if (prefixNode == null) {
+            return Collections.emptyList();
+        }
+
+        List<String> results = new ArrayList<>();
+        collectWords(prefixNode, normalized, results);
+        Collections.sort(results);
+        return results;
     }
 
-    String tempWord="";
-    ArrayList<String> nodeWords=new ArrayList<>();
+    /**
+     * Keeps your original method name and prints the autocomplete results.
+     */
+    public void FetchAll(String prefix) {
+        List<String> matches = fetchAll(prefix);
 
-    public void getChildren(HashMap<Character,Node> children)
-    {
-        for (Node j : children.values())
-        {////i
-            tempWord=tempWord+j.getText();
-            getChildren(j.children);
+        if (matches.isEmpty()) {
+            System.out.println("word not found");
+            return;
         }
 
-        if(!nodeWords.contains(tempWord) && !nodeWords.equals(searchWord))
-            nodeWords.add(tempWord);
-        tempWord="";
-
+        for (String word : matches) {
+            System.out.println(word);
+        }
     }
 
+    private void collectWords(Node node, String currentWord, List<String> results) {
+        if (node.endWord()) {
+            results.add(currentWord);
+        }
+
+        ArrayList<Character> nextCharacters =
+                new ArrayList<>(node.getValidNextCharacter());
+        Collections.sort(nextCharacters);
+
+        for (Character c : nextCharacters) {
+            Node child = node.getChild(c);
+            collectWords(child, currentWord + c, results);
+        }
+    }
 }
-
-
-
-
-
-
-
-
-
